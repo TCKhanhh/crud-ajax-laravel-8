@@ -2,15 +2,17 @@
 
 @section('content')
     <div class="container">
-
         <div class="row">
-
             <div class="col-8">
                 <h2>Danh sách người dùng</h2>
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm người dùng...">
+                </div>
                 <table class="table table-bordered">
                     <thead>
                         <tr>
                             <th>STT</th>
+                            <th>ID</th>
                             <th>Tên</th>
                             <th>Email</th>
                             <th>Vai trò</th>
@@ -20,7 +22,8 @@
                     <tbody id="usersTableBody">
                         @foreach ($users as $key => $user)
                             <tr id="user-row-{{ $user->id }}">
-                                <td class="user-index">{{ $key + 1 }}</td>
+                                <td class="user-index">{{ ($users->currentPage() - 1) * $users->perPage() + $key + 1 }}</td>
+                                <td>{{ $user->id }}</td>
                                 <td>{{ $user->name }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>{{ $user->role == 0 ? 'Admin' : 'Người dùng' }}</td>
@@ -36,8 +39,6 @@
                                 </td>
                             </tr>
 
-
-
                             <!-- Modal xem chi tiết người dùng -->
                             <div class="modal fade" id="viewUserModal{{ $user->id }}" tabindex="-1"
                                 aria-labelledby="viewUserModalLabel{{ $user->id }}" aria-hidden="true">
@@ -51,26 +52,23 @@
                                         </div>
                                         <div class="modal-body">
                                             <div class="mb-3">
-                                                <label class="form-label fw-bold">Tên:</label>
-                                                <p>{{ $user->name }}</p>
+                                                <label class="form-label fw-bold">Tên: {{ $user->name }}</label>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label fw-bold">Email:</label>
-                                                <p>{{ $user->email }}</p>
+                                                <label class="form-label fw-bold">Email: {{ $user->email }}</label>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label fw-bold">Vai trò:</label>
-                                                <p>{{ $user->role == 0 ? 'Admin' : 'Người dùng' }}</p>
+                                                <label class="form-label fw-bold">Vai trò:
+                                                    {{ $user->role == 0 ? 'Admin' : 'Người dùng' }}</label>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label fw-bold">Ngày tạo:</label>
-                                                <p>{{ \Carbon\Carbon::parse($user->created_at)->format('d-m-Y H:i:s') }}
-                                                </p>
+                                                <label class="form-label fw-bold">Ngày tạo:
+                                                    {{ \Carbon\Carbon::parse($user->created_at)->format('d-m-Y H:i:s') }}</label>
+
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label fw-bold">Cập nhật lần cuối:</label>
-                                                <p>{{ \Carbon\Carbon::parse($user->updated_at)->format('d-m-Y H:i:s') }}
-                                                </p>
+                                                <label class="form-label fw-bold">Cập nhật lần cuối:
+                                                    {{ \Carbon\Carbon::parse($user->updated_at)->format('d-m-Y H:i:s') }}</label>
                                             </div>
 
                                         </div>
@@ -150,7 +148,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="role" class="form-label">Vai trò</label>
-                        <select class="form-select" id="role" name="role" required>
+                        <select class="form-control" id="role" name="role" required>
                             <option value="1">Người dùng</option>
                             <option value="0">Admin</option>
                         </select>
@@ -158,9 +156,6 @@
                     <button type="submit" class="btn btn-success">Thêm mới</button>
                 </form>
             </div>
-
-
-
         </div>
     </div>
 @endsection
@@ -174,99 +169,102 @@
             }
         });
 
-        $(document).ready(function() {
-            // Xử lý xem chi tiết người dùng
-            $('.view-user').on('click', function() {
-                let userId = $(this).data('id');
+        //---------------------------------------------------
 
-                $.ajax({
-                    url: `/viewUser/${userId}`,
-                    method: 'GET',
-                    success: function(response) {
-                        $('#viewUserModal-' + userId).modal('show');
-                    },
-                    error: function(xhr) {
-                        alert('Có lỗi xảy ra khi tải thông tin người dùng');
-                    }
-                });
-            });
+        // Xử lý xem chi tiết người dùng
+        $('.view-user').on('click', function() {
+            let userId = $(this).data('id');
 
-            // Xử lý thêm người dùng
-            $('#addUserForm').on('submit', function(e) {
-                e.preventDefault();
-
-                $.ajax({
-                    url: "{{ route('storeUser') }}",
-                    method: 'POST',
-                    data: $(this).serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            location.reload();
-                        }
-                    },
-                    error: function(xhr) {
-                        var errors = xhr.responseJSON.errors;
-                        var errorMessages = '';
-
-                        if (xhr.status === 422) {
-                            for (var field in errors) {
-                                errorMessages += errors[field].join(', ') + '\n';
-                            }
-                            alert(errorMessages);
-                        } else {
-                            alert('Có lỗi xảy ra khi thêm người dùng');
-                        }
-                    }
-                });
-            });
-
-            // Xử lý chỉnh sửa người dùng
-            $('.editUserForm').on('submit', function(e) {
-                e.preventDefault();
-
-                let userId = $(this).data('id');
-                let formData = $(this).serialize();
-
-                $.ajax({
-
-                    url: `/updateUser/${userId}`,
-                    method: 'PUT',
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            location.reload();
-                        }
-                    },
-                    error: function(xhr) {
-                        alert('Có lỗi xảy ra khi chỉnh sửa người dùng');
-                    }
-                });
-            });
-
-            // Xử lý xóa người dùng
-            $('.delete-user').on('click', function() {
-                if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-                    let userId = $(this).data('id');
-                    let row = $(`#user-row-${userId}`);
-
-                    $.ajax({
-                        url: `/deleteUser/${userId}`,
-                        method: 'POST',
-                        success: function(response) {
-                            if (response.success) {
-                                row.remove();
-                                // Cập nhật lại STT
-                                $('.user-index').each(function(index) {
-                                    $(this).text(index + 1);
-                                });
-                            }
-                        },
-                        error: function(xhr) {
-                            alert('Có lỗi xảy ra khi xóa người dùng');
-                        }
-                    });
+            $.ajax({
+                url: `/viewUser/${userId}`,
+                method: 'GET',
+                success: function(response) {
+                    $('#viewUserModal-' + userId).modal('show');
+                },
+                error: function(xhr) {
+                    alert('Có lỗi xảy ra khi tải thông tin người dùng');
                 }
             });
         });
+
+        // Xử lý thêm người dùng
+        $('#addUserForm').on('submit', function(e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: "{{ route('storeUser') }}",
+                method: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    var errors = xhr.responseJSON.errors;
+                    var errorMessages = '';
+
+                    if (xhr.status === 422) {
+                        for (var field in errors) {
+                            errorMessages += errors[field].join(', ') + '\n';
+                        }
+                        alert(errorMessages);
+                    } else {
+                        alert('Có lỗi xảy ra khi thêm người dùng');
+                    }
+                }
+            });
+        });
+
+        // Xử lý chỉnh sửa người dùng
+        $('.editUserForm').on('submit', function(e) {
+            e.preventDefault();
+
+            let userId = $(this).data('id');
+            let formData = $(this).serialize();
+
+            $.ajax({
+
+                url: `/updateUser/${userId}`,
+                method: 'PUT',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                },
+                error: function(xhr) {
+                    alert('Có lỗi xảy ra khi chỉnh sửa người dùng');
+                }
+            });
+        });
+
+        // Xử lý xóa người dùng
+        $('.delete-user').on('click', function() {
+            if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
+                let userId = $(this).data('id');
+                let row = $(`#user-row-${userId}`);
+
+                $.ajax({
+                    url: `/deleteUser/${userId}`,
+                    method: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            row.remove();
+                            // Cập nhật lại STT
+                            let startIndex = ($('.pagination .active').text() - 1) *
+                                {{ $users->perPage() }} + 1;
+                            $('.user-index').each(function(index) {
+                                $(this).text(startIndex + index);
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        alert('Có lỗi xảy ra khi xóa người dùng');
+                    }
+                });
+            }
+        });
+        //---------------------------------------------------
     </script>
 @endsection

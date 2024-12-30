@@ -21,6 +21,7 @@ Route::middleware(['auth', 'checkRole'])->group(function () {
 
         Route::get('/listUser', [UserController::class, 'listUser'])->name('listUser');
         Route::get('/viewUser/{id}', [UserController::class, 'viewUser'])->name('viewUser');
+        Route::get('/searchUsers', [UserController::class, 'searchUsers'])->name('searchUsers');
         Route::post('/storeUser', [UserController::class, 'storeUser'])->name('storeUser');
         Route::put('/updateUser/{id}', [UserController::class, 'updateUser'])->name('updateUser');
         Route::post('/deleteUser/{id}', [UserController::class, 'deleteUser'])->name('deleteUser');

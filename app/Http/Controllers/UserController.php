@@ -8,15 +8,29 @@ use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    // Hiển thị danh sách người dùng
     public function listUser()
     {
-        $users = DB::table('users')->paginate(5);
+        $users = DB::table('users')->paginate(4);
 
         return view('User.listUser', ['users' => $users]);
     }
 
-    // Hiển thị thông tin người dùng
+
+    public function searchUsers(Request $request)
+    {
+        $search = $request->get('search');
+        $users = DB::table('users')
+            ->where('name', 'like', '%' . $search . '%')
+            ->paginate(4)
+            ->appends(['search' => $search]);
+
+        return response()->json([
+            'users' => $users->items(),
+            'pagination' => $users->links('pagination::bootstrap-4')->toHtml()
+        ]);
+    }
+
+
     public function viewUser($id)
     {
         $user = DB::table('users')->where('id', $id)->first();
@@ -35,7 +49,6 @@ class UserController extends Controller
     }
 
 
-    // Lưu người dùng mới
     public function storeUser(Request $request)
     {
         try {
@@ -82,7 +95,6 @@ class UserController extends Controller
     }
 
 
-    // Cập nhật thông tin người dùng
     public function updateUser(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -121,7 +133,6 @@ class UserController extends Controller
     }
 
 
-    // Xóa người dùng
     public function deleteUser($id)
     {
         $user = DB::table('users')->where('id', $id)->delete();
